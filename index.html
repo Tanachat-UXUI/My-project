@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Hand Tracking</title>
+
+  <style>
+
+    body{
+      margin:0;
+      overflow:hidden;
+    }
+
+    #video{
+      position:absolute;
+      width:100vw;
+      height:100vh;
+      object-fit:cover;
+      transform: scaleX(-1);
+    }
+
+    #cursor{
+      opacity:0;
+    }
+
+  </style>
+</head>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+
+<body>
+
+  <video id="video" autoplay playsinline></video>
+
+  <div id="cursor"></div>
+
+  <script>
+
+    const video = document.getElementById('video');
+    const cursor = document.getElementById('cursor');
+
+    const scene = new THREE.Scene();
+
+const camera3D =
+new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
+
+const renderer =
+new THREE.WebGLRenderer({
+alpha:true
+});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+document.body.appendChild(renderer.domElement);
+
+renderer.domElement.style.position = "absolute";
+renderer.domElement.style.top = "0";
+renderer.domElement.style.left = "0";
+renderer.domElement.style.zIndex = "100";
+
+const texture =
+new THREE.TextureLoader().load(
+  "assets/energy.png",
+  () => console.log("โหลดรูปสำเร็จ"),
+  undefined,
+  err => console.log("โหลดรูปไม่สำเร็จ", err)
+);
+
+
+const orbMaterial =
+new THREE.SpriteMaterial({
+  map: texture,
+  transparent: true
+});
+
+const orb =
+new THREE.Sprite(
+  orbMaterial
+);
+
+orb.position.set(
+  0,
+  0,
+  0
+);
+
+orb.scale.set(
+  2,
+  2,
+  1
+);
+
+scene.add(orb);
+
+console.log("orb created");
+
+camera3D.position.z = 5;
+
+function animate(){
+
+  requestAnimationFrame(animate);
+
+  orb.material.rotation += 0.2;
+
+const pulse =
+  1 + Math.sin(Date.now()*0.01)*0.1;
+
+orb.material.opacity = pulse;
+
+  renderer.render(
+    scene,
+    camera3D
+  );
+
+}
+
+animate();
+
+console.log("animate running");
+
+    navigator.mediaDevices
+      .getUserMedia({video:true})
+      .then(stream => {
+        video.srcObject = stream;
+      });
+
+    const hands = new Hands({
+      locateFile: file =>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands:1,
+      modelComplexity:1,
+      minDetectionConfidence:0.7,
+      minTrackingConfidence:0.7
+    });
+
+hands.onResults(results => {
+
+  if (
+    results.multiHandLandmarks &&
+    results.multiHandLandmarks.length > 0
+  ) {
+
+    const hand =
+      results.multiHandLandmarks[0];
+
+    const palm =
+      hand[9];
+
+    orb.position.x =
+      -(palm.x - 0.5) * 10;
+
+    orb.position.y =
+      -(palm.y - 0.5) * 6;
+
+    const thumb = hand[4];
+    const finger = hand[8];
+
+    const distance =
+      Math.sqrt(
+        Math.pow(finger.x - thumb.x, 2) +
+        Math.pow(finger.y - thumb.y, 2)
+      );
+
+    const targetScale =
+  Math.max(
+    0.1,
+    distance * 30
+  );
+
+orb.scale.x +=
+(targetScale - orb.scale.x) * 0.2;
+
+orb.scale.y +=
+(targetScale - orb.scale.y) * 0.2;
+
+
+  }
+
+});
+
+    const camera =
+    new Camera(video, {
+
+      onFrame: async () => {
+        await hands.send({
+          image: video
+        });
+      },
+
+      width:1280,
+      height:720
+
+    });
+
+    camera.start();
+
+  </script>
+
+</body>
+</html>
