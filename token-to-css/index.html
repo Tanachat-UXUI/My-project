@@ -1,0 +1,1293 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>
+<title>Token to CSS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Apple-style workbench. Grouped inset cards on a light grey ground, frosted sticky toolbar, pill buttons, segmented tabs. */
+:root {
+  --bg: #F5F5F7; --surface: #FFFFFF; --surface-2: #F5F5F7; --fill: rgba(120, 120, 128, 0.12); --fill-2: rgba(120, 120, 128, 0.07);
+  --fg: #1D1D1F; --muted: #6E6E73; --line: rgba(60, 60, 67, 0.14);
+  --accent: #0071E3; --accent-fg: #FFFFFF; --accent-soft: rgba(0, 113, 227, 0.10);
+  --ok: #1F7A36; --ok-soft: rgba(52, 199, 89, 0.16); --warn: #A04A00; --warn-soft: rgba(255, 159, 10, 0.18);
+  --err: #D70015; --err-soft: rgba(255, 59, 48, 0.12);
+  --code-bg: #1D1D1F; --code-fg: #E8E8ED; --code-dim: #8E8E93; --code-prop: #64D2FF;
+  --check-a: #FFFFFF; --check-b: #D9D9DE;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.05);
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Noto Sans Thai", system-ui, "Segoe UI", sans-serif;
+  --font-code: "SF Mono", ui-monospace, "IBM Plex Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1C1C1E; --surface-2: #2C2C2E; --fill: rgba(120, 120, 128, 0.32); --fill-2: rgba(120, 120, 128, 0.18);
+    --fg: #F5F5F7; --muted: #98989D; --line: rgba(84, 84, 88, 0.55);
+    --accent: #0A84FF; --accent-fg: #FFFFFF; --accent-soft: rgba(10, 132, 255, 0.18);
+    --ok: #30D158; --ok-soft: rgba(48, 209, 88, 0.18); --warn: #FFB340; --warn-soft: rgba(255, 159, 10, 0.2);
+    --err: #FF6961; --err-soft: rgba(255, 69, 58, 0.2);
+    --code-bg: #0D0D0F; --code-fg: #E8E8ED; --code-dim: #8E8E93; --code-prop: #64D2FF;
+    --check-a: #2C2C2E; --check-b: #3A3A3C; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1C1C1E; --surface-2: #2C2C2E; --fill: rgba(120, 120, 128, 0.32); --fill-2: rgba(120, 120, 128, 0.18);
+  --fg: #F5F5F7; --muted: #98989D; --line: rgba(84, 84, 88, 0.55);
+  --accent: #0A84FF; --accent-fg: #FFFFFF; --accent-soft: rgba(10, 132, 255, 0.18);
+  --ok: #30D158; --ok-soft: rgba(48, 209, 88, 0.18); --warn: #FFB340; --warn-soft: rgba(255, 159, 10, 0.2);
+  --err: #FF6961; --err-soft: rgba(255, 69, 58, 0.2);
+  --code-bg: #0D0D0F; --code-fg: #E8E8ED; --code-dim: #8E8E93; --code-prop: #64D2FF;
+  --check-a: #2C2C2E; --check-b: #3A3A3C; --shadow: none; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font: 400 14px/1.55 var(--font-ui); -webkit-font-smoothing: antialiased; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+.wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
+code { font-family: var(--font-code); font-size: 0.92em; }
+
+/* header */
+.top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.top h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.022em; line-height: 1.15; }
+.top p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+.mark { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(180deg, #4BA3FF, #0071E3); color: #fff; display: grid; place-items: center;
+  font: 500 15px var(--font-code); flex: none; box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35); }
+
+.grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 24px; align-items: start; }
+.side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; box-shadow: var(--shadow); }
+.card h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; display: flex; gap: 8px; align-items: center; }
+.step { display: none; }
+
+/* buttons */
+.btn { border: 0; background: var(--fill); color: var(--accent); border-radius: 980px; padding: 8px 18px; font-weight: 500; min-height: 36px; transition: background .15s, filter .15s, transform .1s; }
+.btn:hover { background: color-mix(in srgb, var(--fill) 70%, var(--accent) 12%); }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); }
+.btn.primary:hover { background: var(--accent); filter: brightness(1.08); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.small { padding: 5px 14px; min-height: 30px; font-size: 13px; }
+.hint { color: var(--muted); font-size: 12px; margin: 0; }
+.chip { font: 400 12px var(--font-code); background: var(--fill-2); border-radius: 8px; padding: 3px 10px; max-width: 100%; overflow-wrap: anywhere; }
+.chip .rm { border: 0; background: none; padding: 0 0 0 6px; color: var(--muted); font-size: 15px; line-height: 1; }
+.chip .rm:hover { color: var(--err); }
+.files { display: flex; flex-wrap: wrap; gap: 6px; }
+.check { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+
+/* upload: folder drop + grouped list of slots */
+.folderbox { border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; background: var(--accent-soft);
+  outline: 1.5px dashed color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: -1.5px; transition: background .15s; }
+.folderbox.over { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.folderbox small { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.or { font-size: 12px; color: var(--muted); text-align: center; letter-spacing: 0.02em; }
+.slots { display: flex; flex-direction: column; border-radius: 14px; background: var(--surface-2); overflow: hidden; }
+.slot { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid var(--line); transition: background .15s; }
+.slot:first-child { border-top: 0; }
+.slot.over { background: var(--accent-soft); }
+.slot-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.slot-h strong { font-weight: 600; font-size: 15px; }
+.slot-h .count { font: 400 12px var(--font-code); color: var(--muted); white-space: nowrap; }
+.slot small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.slot .actions { gap: 6px; }
+.slot .btn { background: var(--surface); }
+.slot .chip { background: var(--surface); }
+.lay { font-size: 11px; color: var(--muted); }
+
+/* status */
+.banner { background: var(--warn-soft); color: var(--warn); border-radius: 14px; padding: 12px 16px; font-size: 13px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.banner .btn { background: var(--surface); }
+.empty-state { background: var(--surface); box-shadow: var(--shadow); border-radius: 20px; padding: 56px 24px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.empty-state strong { font-size: 21px; font-weight: 600; letter-spacing: -0.015em; }
+.empty-state p { margin: 0; color: var(--muted); max-width: 46ch; font-size: 15px; }
+.verdict { display: flex; gap: 10px; align-items: center; padding: 14px 18px; border-radius: 16px; font-weight: 500; font-size: 15px; }
+.verdict.ok { background: var(--ok-soft); color: var(--ok); }
+.verdict.warn { background: var(--warn-soft); color: var(--warn); }
+.verdict.err { background: var(--err-soft); color: var(--err); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); box-shadow: var(--shadow); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.tile b { font: 600 28px/1.15 var(--font-ui); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile span { color: var(--muted); font-size: 12.5px; }
+.tile.err b { color: var(--err); } .tile.warn b { color: var(--warn); }
+
+/* sticky frosted toolbar + segmented tabs */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between;
+  padding: 10px 0; background: color-mix(in srgb, var(--bg) 80%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+.tabs { display: inline-flex; background: var(--fill); padding: 2px; border-radius: 10px; gap: 2px; }
+.tab { background: none; border: 0; border-radius: 8px; padding: 6px 16px; font-weight: 500; color: var(--fg); font-size: 13.5px; transition: background .15s; }
+.tab[aria-selected="true"] { background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.issues { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow: auto; }
+.issue { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; font-size: 13px; padding: 9px 14px; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+.pill { font: 500 11px var(--font-ui); padding: 2px 9px; border-radius: 980px; align-self: start; margin-top: 1px; white-space: nowrap; }
+.pill.error { background: var(--err-soft); color: var(--err); } .pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.info { background: var(--accent-soft); color: var(--accent); } .pill.ok { background: var(--ok-soft); color: var(--ok); }
+.issue code, .name { font-family: var(--font-code); font-size: 12px; overflow-wrap: anywhere; }
+
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.themes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+input[type="text"] { border: 0; background: var(--fill); border-radius: 10px; padding: 7px 14px; min-height: 36px; width: 100%; font-size: 14px; }
+input[type="text"]::placeholder { color: var(--muted); }
+.filters input[type="text"] { max-width: 260px; }
+.fchip { border: 0; background: var(--fill-2); border-radius: 980px; padding: 4px 13px; font-size: 13px; transition: background .15s; }
+.fchip:hover { background: var(--fill); }
+.fchip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+
+/* table */
+.tablewrap { overflow-x: auto; border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; }
+th { text-align: left; font-size: 12px; font-weight: 500; color: var(--muted); padding: 12px 16px 10px; border-bottom: 0.5px solid var(--line); }
+td { padding: 12px 16px; border-bottom: 0.5px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td:nth-child(2) { min-width: 210px; }
+td:nth-child(3) { min-width: 130px; }
+tbody tr:hover td { background: var(--fill-2); }
+tr.row-error td { background: var(--err-soft); }
+tr.row-changed td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+td .chip { white-space: nowrap; overflow-wrap: normal; display: inline-block; }
+.val { font: 400 12px/1.5 var(--font-code); overflow-wrap: anywhere; }
+.val .res { color: var(--muted); display: block; }
+.raw { font: 400 12px/1.5 var(--font-code); color: var(--muted); overflow-wrap: anywhere; max-width: 260px; }
+.msg { font-size: 12px; margin-top: 4px; }
+.msg.error { color: var(--err); } .msg.warn { color: var(--warn); } .msg.info { color: var(--muted); }
+.pv { width: 120px; min-height: 28px; display: flex; align-items: center; }
+.sw { width: 44px; height: 28px; border-radius: 8px; box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.2); background-image: linear-gradient(45deg, var(--check-b) 25%, transparent 25%, transparent 75%, var(--check-b) 75%), linear-gradient(45deg, var(--check-b) 25%, var(--check-a) 25%, var(--check-a) 75%, var(--check-b) 75%); background-size: 10px 10px; background-position: 0 0, 5px 5px; position: relative; overflow: hidden; }
+.sw i { position: absolute; inset: 0; }
+.sp { height: 10px; background: var(--accent); border-radius: 5px; max-width: 120px; }
+.rd { width: 36px; height: 36px; border: 2px solid var(--accent); background: var(--accent-soft); }
+.bx { width: 56px; height: 30px; background: var(--surface); border-radius: 8px; margin: 4px; }
+.tx { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.more { align-self: center; }
+.empty { padding: 32px; text-align: center; color: var(--muted); }
+
+.cssbox { background: var(--code-bg); color: var(--code-fg); border-radius: 18px; padding: 18px 20px; overflow: auto; max-height: 680px; }
+.cssbox pre { margin: 0; font: 400 12.5px/1.65 var(--font-code); tab-size: 2; }
+.cssbox .c { color: var(--code-dim); } .cssbox .p { color: var(--code-prop); }
+.toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: rgba(29, 29, 31, 0.9); color: #fff;
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); padding: 10px 20px; border-radius: 980px; font-weight: 500; font-size: 13.5px; z-index: 40; max-width: calc(100vw - 32px); text-align: center; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25); }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .side { display: contents; }
+  .side > .card:first-child { order: 1; }
+  .main { order: 2; }
+  .side > .card:last-child { order: 3; }
+  .top h1 { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+  <header class="top">
+    <div class="mark" aria-hidden="true">{ }</div>
+    <div>
+      <h1>Token to CSS</h1>
+      <p>แปลงไฟล์ JSON จาก Tokens Studio for Figma เป็น CSS variables สำหรับทีม dev</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside class="side">
+      <section class="card" aria-labelledby="h-upload">
+        <h2 id="h-upload"><span class="step">1</span>อัปโหลดไฟล์ token แยกตามชั้น</h2>
+        <div class="folderbox" id="folderBox">
+          <button class="btn primary" id="pickFolder" type="button">อัปโหลดโฟลเดอร์</button>
+          <small>เลือกโฟลเดอร์เดียว ระบบแยกเข้าช่อง Primitive / Semantic / Component ตามชื่อโฟลเดอร์ย่อยให้อัตโนมัติ หรือลากโฟลเดอร์มาวางที่นี่</small>
+          <input type="file" id="folderIn" webkitdirectory hidden>
+        </div>
+        <div class="or">หรืออัปโหลดแยกทีละช่อง</div>
+        <div class="slots" id="slots"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-opt">
+        <h2 id="h-opt"><span class="step">2</span>ตั้งค่าการแปลง</h2>
+        <label class="check"><input type="checkbox" id="groupComments" checked><span>แบ่งกลุ่มด้วย comment</span></label>
+      </section>
+    </aside>
+
+    <section class="main" aria-live="polite">
+      <div class="banner" id="sampleBanner" hidden><span>กำลังแสดงข้อมูลตัวอย่าง ไม่ใช่ไฟล์ของทีม (มีข้อผิดพลาดที่ตั้งใจใส่ไว้ 2 จุดเพื่อให้เห็นการแจ้งเตือน)</span> <button class="btn small" id="clearSample" type="button">ล้างตัวอย่าง</button></div>
+      <div class="empty-state" id="emptyState">
+        <strong>ยังไม่ได้อัปโหลดไฟล์</strong>
+        <p>อัปโหลดไฟล์ token ที่ช่อง Primitive, Semantic และ Component ทางซ้าย ผลตรวจสอบและ CSS จะแสดงที่นี่</p>
+        <button class="btn small" id="trySample" type="button">ดูตัวอย่างด้วยข้อมูลสมมติ</button>
+      </div>
+      <div id="results" style="display:flex;flex-direction:column;gap:14px;min-width:0" hidden>
+      <div id="verdict"></div>
+      <div class="tiles" id="tiles"></div>
+
+      <div class="bar">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" id="t-check" aria-selected="true" aria-controls="p-check" type="button">ตรวจสอบ token</button>
+          <button class="tab" role="tab" id="t-css" aria-selected="false" aria-controls="p-css" type="button">CSS ที่ได้</button>
+        </div>
+        <div class="actions">
+          <button class="btn" id="copy" type="button">คัดลอก CSS</button>
+          <button class="btn primary" id="download" type="button">ดาวน์โหลด tokens.css</button>
+        </div>
+      </div>
+
+      <div id="p-check" role="tabpanel" aria-labelledby="t-check" style="display:flex;flex-direction:column;gap:12px;min-width:0">
+        <div class="issues" id="issues"></div>
+        <div class="themes" id="ctxTabs"></div>
+        <div class="filters">
+          <input type="text" id="search" placeholder="ค้นหาชื่อหรือค่า" aria-label="ค้นหา token">
+          <div class="filters" id="chips"></div>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>ตัวอย่าง</th><th>ตัวแปร CSS</th><th>ค่าใน CSS</th><th>ค่าต้นฉบับจาก Figma</th><th>ชุด</th><th>สถานะ</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <button class="btn more" id="more" type="button" hidden>แสดงเพิ่ม</button>
+      </div>
+
+      <div id="p-css" role="tabpanel" aria-labelledby="t-css" hidden>
+        <div class="cssbox"><pre id="css" tabindex="0"></pre></div>
+      </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="application/json" id="sampleData">
+[{"name":"primitive.json","layer":"primitive","json":{"color":{"$type":"color","brand":{"primary":{"value":"#1F6FEB","type":"color","description":"สีหลักของแบรนด์"},"accent":{"value":"#F59E0B","type":"color"}},"neutral":{"0":{"value":"#FFFFFF","type":"color"},"100":{"value":"#F3F4F6","type":"color"},"700":{"value":"#374151","type":"color"},"900":{"value":"#111827","type":"color"}}},"spacing":{"base":{"value":"8","type":"spacing"}},"radius":{"sm":{"value":"4","type":"borderRadius"},"md":{"value":"8","type":"borderRadius"},"pill":{"value":"999","type":"borderRadius"}},"opacity":{"disabled":{"value":"40%","type":"opacity"},"overlay":{"value":"0.6","type":"opacity"}},"font":{"family":{"sans":{"value":"Noto Sans Thai","type":"fontFamilies"},"mono":{"value":"JetBrains Mono, monospace","type":"fontFamilies"}},"weight":{"regular":{"value":"Regular","type":"fontWeights"},"semibold":{"value":"SemiBold","type":"fontWeights"},"bold":{"value":"Bold","type":"fontWeights"},"display":{"value":"Ultra Fat","type":"fontWeights"}},"size":{"body":{"value":"16","type":"fontSizes"},"h1":{"value":"40","type":"fontSizes"},"h2":{"value":"28","type":"fontSizes"}},"lineHeight":{"tight":{"value":"120%","type":"lineHeights"},"normal":{"value":"150%","type":"lineHeights"}}}}},{"name":"semantic/global.json","layer":"semantic","json":{"color":{"$type":"color","brand":{"primary-hover":{"value":"{color.brand.primary}","type":"color","$extensions":{"studio.tokens":{"modify":{"type":"darken","value":"0.15","space":"lch"}}}},"primary-soft":{"value":"{color.brand.primary}","type":"color","$extensions":{"studio.tokens":{"modify":{"type":"alpha","value":"0.12"}}}}},"feedback":{"success":{"value":"#16A34A","type":"color"},"danger":{"value":"{color.brand.primry}","type":"color","description":"ตั้งใจพิมพ์ผิด เพื่อให้เห็นการแจ้งเตือน"}}},"spacing":{"sm":{"value":"{spacing.base} * 2","type":"spacing"},"md":{"value":"{spacing.base} * 3","type":"spacing"},"lg":{"value":"{spacing.base} * 5","type":"spacing"},"xl":{"value":"{spacing.lg} + 8","type":"spacing"}},"typography":{"h1":{"type":"typography","value":{"fontFamily":"{font.family.sans}","fontWeight":"{font.weight.bold}","fontSize":"{font.size.h1}","lineHeight":"{font.lineHeight.tight}","letterSpacing":"-1%"}},"h2":{"type":"typography","value":{"fontFamily":"{font.family.sans}","fontWeight":"{font.weight.semibold}","fontSize":"{font.size.h2}","lineHeight":"{font.lineHeight.tight}"}},"body":{"type":"typography","value":{"fontFamily":"{font.family.sans}","fontWeight":"{font.weight.regular}","fontSize":"{font.size.body}","lineHeight":"{font.lineHeight.normal}"}}},"shadow":{"card":{"type":"boxShadow","value":[{"x":"0","y":"1","blur":"2","spread":"0","color":"rgba(17,24,39,0.08)","type":"dropShadow"},{"x":"0","y":"8","blur":"24","spread":"-4","color":"rgba(17,24,39,0.12)","type":"dropShadow"}]},"inset":{"type":"boxShadow","value":{"x":"0","y":"1","blur":"0","spread":"0","color":"{color.neutral.100}","type":"innerShadow"}}}}},{"name":"semantic/light.json","layer":"semantic","json":{"surface":{"page":{"value":"{color.neutral.0}","type":"color"},"card":{"value":"{color.neutral.100}","type":"color"},"text":{"value":"{color.neutral.900}","type":"color"},"text-muted":{"value":"{color.neutral.700}","type":"color"}}}},{"name":"semantic/dark.json","layer":"semantic","json":{"surface":{"page":{"value":"{color.neutral.900}","type":"color"},"card":{"value":"{color.neutral.700}","type":"color"},"text":{"value":"{color.neutral.0}","type":"color"},"text-muted":{"value":"{color.neutral.100}","type":"color"}}}},{"name":"$themes.json","layer":"semantic","json":[{"id":"light","name":"Light","selectedTokenSets":{"primitive":"source","semantic/global":"enabled","semantic/light":"enabled","component":"enabled"}},{"id":"dark","name":"Dark","selectedTokenSets":{"primitive":"source","semantic/global":"enabled","semantic/dark":"enabled","component":"enabled"}}]},{"name":"$metadata.json","layer":"semantic","json":{"tokenSetOrder":["primitive","semantic/global","semantic/light","semantic/dark","component"]}},{"name":"component.json","layer":"component","json":{"button":{"primary":{"bg":{"value":"{color.brand.primary}","type":"color"},"bg-hover":{"value":"{color.brand.primary-hover}","type":"color"},"text":{"value":"{color.neutral.0}","type":"color"},"radius":{"value":"{radius.md}","type":"borderRadius"},"padding-x":{"value":"{spacing.md}","type":"spacing"},"height":{"value":"{spacing.base} * 5","type":"sizing"}},"disabled":{"opacity":{"value":"{opacity.disabled}","type":"opacity"}}},"card":{"bg":{"value":"{surface.card}","type":"color"},"radius":{"value":"{radius.md}","type":"borderRadius"},"padding":{"value":"{spacing.lg}","type":"spacing"},"shadow":{"value":"{shadow.card}","type":"boxShadow"}}}}]</script>
+<script>
+(function (root) {
+'use strict';
+/* ---------- utils ---------- */
+const lc = (s) => String(s == null ? '' : s).toLowerCase();
+const rnd = (n, d = 4) => Math.round(n * Math.pow(10, d)) / Math.pow(10, d);
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const REF_G = /\{([^{}]+)\}/g;
+
+function slug(seg) {
+  let s = String(seg)
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .toLowerCase()
+    .replace(/[\s_/.]+/g, '-')
+    .replace(/[^\p{L}\p{N}-]/gu, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return s || 'x';
+}
+
+function cssName(path, prefix) {
+  const p = prefix ? slug(prefix) + '-' : '';
+  return '--' + p + path.map(slug).join('-');
+}
+
+function findRefs(str) {
+  const out = [];
+  let m;
+  const re = new RegExp(REF_G.source, 'g');
+  while ((m = re.exec(str))) out.push({ match: m[0], key: m[1].trim() });
+  if (!out.length) {
+    const legacy = /^\$([A-Za-z0-9_.\-/ ]+)$/.exec(str.trim());
+    if (legacy) out.push({ match: str.trim(), key: legacy[1], legacy: true });
+  }
+  return out;
+}
+
+function walkStrings(v, fn) {
+  if (typeof v === 'string') fn(v);
+  else if (Array.isArray(v)) v.forEach((x) => walkStrings(x, fn));
+  else if (isObj(v)) Object.values(v).forEach((x) => walkStrings(x, fn));
+}
+
+/* ---------- color ---------- */
+function parseColor(s) {
+  if (typeof s !== 'string') return null;
+  s = s.trim();
+  let m = /^#([0-9a-f]{3,8})$/i.exec(s);
+  if (m) {
+    let h = m[1];
+    if (h.length === 3 || h.length === 4) h = h.split('').map((c) => c + c).join('');
+    if (h.length !== 6 && h.length !== 8) return null;
+    return {
+      r: parseInt(h.slice(0, 2), 16),
+      g: parseInt(h.slice(2, 4), 16),
+      b: parseInt(h.slice(4, 6), 16),
+      a: h.length === 8 ? rnd(parseInt(h.slice(6, 8), 16) / 255, 3) : 1,
+    };
+  }
+  m = /^rgba?\(\s*([\d.]+%?)[\s,]+([\d.]+%?)[\s,]+([\d.]+%?)(?:[\s,/]+([\d.]+%?))?\s*\)$/i.exec(s);
+  if (m) {
+    const ch = (x) => (x.endsWith('%') ? (parseFloat(x) * 255) / 100 : parseFloat(x));
+    const a = m[4] == null ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4]);
+    return { r: ch(m[1]), g: ch(m[2]), b: ch(m[3]), a };
+  }
+  m = /^hsla?\(\s*([\d.]+)(?:deg)?[\s,]+([\d.]+)%[\s,]+([\d.]+)%(?:[\s,/]+([\d.]+%?))?\s*\)$/i.exec(s);
+  if (m) {
+    const h = (parseFloat(m[1]) % 360) / 360, sat = parseFloat(m[2]) / 100, l = parseFloat(m[3]) / 100;
+    const q = l < 0.5 ? l * (1 + sat) : l + sat - l * sat, p = 2 * l - q;
+    const f = (t) => {
+      t = (t + 1) % 1;
+      return t < 1 / 6 ? p + (q - p) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p;
+    };
+    const a = m[4] == null ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4]);
+    return sat === 0
+      ? { r: l * 255, g: l * 255, b: l * 255, a }
+      : { r: f(h + 1 / 3) * 255, g: f(h) * 255, b: f(h - 1 / 3) * 255, a };
+  }
+  return null;
+}
+
+function colorToCss(c) {
+  const k = (n) => Math.max(0, Math.min(255, Math.round(n)));
+  if (c.a >= 1) return '#' + [c.r, c.g, c.b].map((n) => k(n).toString(16).padStart(2, '0')).join('');
+  return `rgba(${k(c.r)}, ${k(c.g)}, ${k(c.b)}, ${rnd(c.a, 3)})`;
+}
+
+function mixColors(a, b, t) {
+  return { r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t, a: a.a + (b.a - a.a) * t };
+}
+
+/* ---------- leaf formatting ---------- */
+const PX_TYPES = new Set(['spacing', 'sizing', 'dimension', 'borderradius', 'borderwidth', 'fontsizes', 'fontsize',
+  'paragraphspacing', 'paragraphindent', 'width', 'height']);
+const COMPOSITE = new Set(['typography', 'boxshadow', 'shadow', 'border', 'composition']);
+const WEIGHTS = { thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, regular: 400, normal: 400,
+  book: 400, medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900 };
+
+function quoteFamily(s) {
+  s = s.trim();
+  if (/["',]/.test(s)) return s;
+  return /\s|^\d/.test(s) ? `"${s}"` : s;
+}
+
+function fmt(v, type, warn) {
+  const t = lc(type);
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'boolean') return String(v);
+  if (Array.isArray(v)) return t === 'cubicbezier' ? `cubic-bezier(${v.join(', ')})` : v.join(', ');
+  if (isObj(v)) return 'value' in v && 'unit' in v ? `${v.value}${v.unit}` : null;
+  const s = String(v).trim();
+  const num = /^-?\d*\.?\d+$/.test(s) ? parseFloat(s) : null;
+  const pm = /^(-?\d*\.?\d+)%$/.exec(s);
+  const pct = pm ? parseFloat(pm[1]) : null;
+  if (PX_TYPES.has(t)) return num !== null ? (num === 0 ? '0' : num + 'px') : s;
+  switch (t) {
+    case 'letterspacing':
+      return num !== null ? (num === 0 ? '0' : num + 'px') : pct !== null ? rnd(pct / 100) + 'em' : s;
+    case 'lineheights':
+    case 'lineheight':
+      if (pct !== null) return String(rnd(pct / 100));
+      if (num !== null) return num <= 4 ? String(num) : num + 'px';
+      return /^auto$/i.test(s) ? 'normal' : s;
+    case 'opacity':
+      if (pct !== null) return String(rnd(pct / 100));
+      return num !== null ? String(num > 1 ? rnd(num / 100) : num) : s;
+    case 'fontweights':
+    case 'fontweight': {
+      if (num !== null) return String(num);
+      const key = lc(s).replace(/italic|oblique|[\s-]/g, '');
+      if (WEIGHTS[key]) return String(WEIGHTS[key]);
+      if (warn) warn(`ไม่รู้จักชื่อ font weight "${s}" (ใช้ค่าเดิมตามที่ส่งมา)`);
+      return s;
+    }
+    case 'fontfamilies':
+    case 'fontfamily':
+      return quoteFamily(s);
+    case 'duration':
+      return num !== null ? num + 'ms' : s;
+    case 'text':
+      return /^["']/.test(s) ? s : JSON.stringify(s);
+    case 'asset':
+      return /^url\(/.test(s) ? s : `url("${s}")`;
+    case 'textcase':
+      return { upper: 'uppercase', lower: 'lowercase', title: 'capitalize' }[lc(s)] || lc(s);
+    case 'textdecoration':
+      return { strikethrough: 'line-through' }[lc(s)] || lc(s);
+    default:
+      return s;
+  }
+}
+
+/* ---------- parse input ---------- */
+function inferType(v) {
+  if (typeof v === 'string') {
+    if (/^(#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(v.trim())) return 'color';
+    if (/^-?\d*\.?\d+(px|rem|em)$/i.test(v.trim())) return 'dimension';
+    if (/gradient\(/i.test(v)) return 'color';
+  }
+  if (isObj(v)) {
+    if ('fontFamily' in v || 'fontSize' in v) return 'typography';
+    if ('blur' in v || 'x' in v || 'offsetX' in v) return 'boxShadow';
+    return 'composition';
+  }
+  if (Array.isArray(v)) return 'boxShadow';
+  return 'other';
+}
+
+function isTokenNode(n) {
+  if (!isObj(n)) return false;
+  if ('$value' in n) return true;
+  if (!('value' in n)) return false;
+  if ('type' in n) return true;
+  const v = n.value;
+  if (!isObj(v) && !Array.isArray(v)) return true;
+  if (Array.isArray(v)) return true;
+  return Object.values(v).every((x) => typeof x !== 'object' || x === null);
+}
+
+function getModify(n) {
+  const e = n.$extensions;
+  if (!isObj(e)) return null;
+  const st = e['studio.tokens'] || (isObj(e.studio) && e.studio.tokens) || null;
+  return st && isObj(st.modify) ? st.modify : null;
+}
+
+const LAYERS = ['primitive', 'semantic', 'component'];
+const rankOf = (l) => { const i = LAYERS.indexOf(l); return i < 0 ? 1 : i; };
+
+function walkSet(node, path, inhType, setName, out, issues, layer) {
+  for (const [k, v] of Object.entries(node)) {
+    if (k.startsWith('$') || !isObj(v)) continue;
+    const p = path.concat(k);
+    if (isTokenNode(v)) {
+      const raw = '$value' in v ? v.$value : v.value;
+      const declared = v.$type || v.type || inhType || null;
+      const type = declared || inferType(raw);
+      if (!declared) issues.push({ level: 'info', token: p.join('.'), msg: `ไม่ได้ระบุ type จึงเดาเป็น "${type}"` });
+      out.push({
+        key: p.join('.'), path: p, value: raw, type, set: setName, layer: layer || 'semantic',
+        description: v.$description || v.description || '', modify: getModify(v),
+      });
+    } else {
+      walkSet(v, p, v.$type || inhType, setName, out, issues, layer);
+    }
+  }
+}
+
+function parseInput(files) {
+  const issues = [];
+  const model = { sets: {}, order: [], themes: [], issues, sourceNames: files.map((f) => f.name) };
+  let metaOrder = null;
+  const loose = [];
+  for (const f of files) {
+    let obj;
+    try { obj = JSON.parse(f.text.replace(/^﻿/, '')); }
+    catch (e) { issues.push({ level: 'error', token: null, msg: `ไฟล์ "${f.name}" ไม่ใช่ JSON ที่ถูกต้อง (${e.message})` }); continue; }
+    const full = f.name.replace(/\.json$/i, '');
+    const base = full.split('/').pop();
+    if (base === '$themes' && Array.isArray(obj)) { model.themes = obj; continue; }
+    if (base === '$metadata' && isObj(obj)) { metaOrder = obj.tokenSetOrder || null; continue; }
+    if (!isObj(obj)) { issues.push({ level: 'error', token: null, msg: `ไฟล์ "${f.name}" ต้องเป็น JSON object` }); continue; }
+    if ('$themes' in obj || '$metadata' in obj) {
+      if (Array.isArray(obj.$themes)) model.themes = obj.$themes;
+      if (isObj(obj.$metadata) && obj.$metadata.tokenSetOrder) metaOrder = obj.$metadata.tokenSetOrder;
+      for (const [k, v] of Object.entries(obj)) if (!k.startsWith('$') && isObj(v)) loose.push([k, v, f.layer]);
+    } else {
+      loose.push([full, obj, f.layer]);
+    }
+  }
+  model.setLayer = {};
+  for (const [name, obj, layer] of loose) {
+    const list = [];
+    walkSet(obj, [], obj.$type || null, name, list, issues, layer);
+    model.sets[name] = list;
+    model.setLayer[name] = layer || 'semantic';
+    if (!list.length) issues.push({ level: 'warn', token: null, msg: `ชุด token "${name}" ไม่มี token เลย` });
+  }
+  const names = Object.keys(model.sets);
+  // Folder picks may drop a path prefix (e.g. "semantic/global" vs "global"): match by path suffix when unambiguous.
+  const resolveName = (n) => {
+    if (names.includes(n)) return n;
+    const c = names.filter((x) => x.endsWith('/' + n) || n.endsWith('/' + x));
+    return c.length === 1 ? c[0] : n;
+  };
+  metaOrder = (metaOrder || []).map(resolveName);
+  model.themes = (model.themes || []).map((t) => !isObj(t) || !isObj(t.selectedTokenSets) ? t : Object.assign({}, t, {
+    selectedTokenSets: Object.fromEntries(Object.entries(t.selectedTokenSets).map(([k, v]) => [resolveName(k), v])),
+  }));
+  model.order = metaOrder.filter((n) => names.includes(n));
+  names.forEach((n) => { if (!model.order.includes(n)) model.order.push(n); });
+  model.order = model.order.map((n, i) => [n, i]).sort((x, y) =>
+    rankOf(model.setLayer[x[0]]) - rankOf(model.setLayer[y[0]]) || x[1] - y[1]).map((x) => x[0]);
+  model.themes = (model.themes || []).filter((t) => isObj(t) && t.name);
+  const missing = new Set();
+  model.themes.forEach((t) => Object.entries(t.selectedTokenSets || {}).forEach(([s, st]) => {
+    if (st !== 'disabled' && !names.includes(s)) missing.add(s);
+  }));
+  missing.forEach((s) => issues.push({ level: 'warn', token: null,
+    msg: `theme อ้างถึงชุด token "${s}" แต่ไม่พบไฟล์นี้ในที่อัปโหลด (ถ้าอยู่ในโฟลเดอร์ย่อย ให้เลือกทั้งโฟลเดอร์)` }));
+  return model;
+}
+/* ---------- math ---------- */
+function evalMath(s) {
+  const toks = [];
+  const re = /\s*(?:(\d*\.?\d+)([a-z%]*)|([()+\-*/]))/gy;
+  let m, last = 0;
+  while ((m = re.exec(s))) {
+    toks.push(m[3] ? { op: m[3] } : { n: parseFloat(m[1]), u: m[2] });
+    last = re.lastIndex;
+  }
+  if (s.slice(last).trim() !== '' || !toks.length) return null;
+  let i = 0;
+  const peekOp = () => (toks[i] && toks[i].op) || null;
+  function factor() {
+    const t = toks[i];
+    if (!t) throw 0;
+    if (t.op === '-') { i++; const f = factor(); return { n: -f.n, u: f.u }; }
+    if (t.op === '(') { i++; const v = expr(); if (peekOp() !== ')') throw 0; i++; return v; }
+    if (t.op) throw 0;
+    i++;
+    return { n: t.n, u: t.u };
+  }
+  function term() {
+    let a = factor();
+    while (peekOp() === '*' || peekOp() === '/') {
+      const op = toks[i++].op, b = factor();
+      if (op === '*') { if (a.u && b.u) throw 0; a = { n: a.n * b.n, u: a.u || b.u }; }
+      else { if (b.n === 0 || (b.u && b.u !== a.u)) throw 0; a = { n: a.n / b.n, u: b.u ? '' : a.u }; }
+    }
+    return a;
+  }
+  function expr() {
+    let a = term();
+    while (peekOp() === '+' || peekOp() === '-') {
+      const op = toks[i++].op, b = term();
+      if (a.u && b.u && a.u !== b.u) throw 0;
+      a = { n: op === '+' ? a.n + b.n : a.n - b.n, u: a.u || b.u };
+    }
+    return a;
+  }
+  try { const v = expr(); return i === toks.length ? v : null; } catch (e) { return null; }
+}
+
+function addPxToBare(expr) {
+  const toks = expr.match(/var\(--[^)]*\)|\d*\.?\d+[a-z%]*|[()+\-*/]/gi) || [];
+  const out = toks.map((t, i) => {
+    if (!/^\d*\.?\d+$/.test(t)) return t;
+    const near = (x) => x === '+' || x === '-';
+    return near(toks[i - 1]) || near(toks[i + 1]) ? t + 'px' : t;
+  });
+  return out.reduce((acc, t, i) => {
+    if (i === 0) return t;
+    return /^[+\-*/]$/.test(t) || /^[+\-*/]$/.test(out[i - 1]) ? acc + ' ' + t : acc + t;
+  }, '');
+}
+
+/* ---------- context (sets merged for one theme) ---------- */
+function makeCtx(model, theme, opts) {
+  const map = new Map();
+  const status = {};
+  if (theme) Object.assign(status, theme.selectedTokenSets || {});
+  for (const setName of model.order) {
+    const st = theme ? status[setName] : 'enabled';
+    if (st !== 'enabled' && st !== 'source') continue;
+    for (const tok of model.sets[setName]) map.set(tok.key, Object.assign({}, tok, { source: st === 'source' && opts.includeSource === false }));
+  }
+  const names = new Map();
+  const dupes = [];
+  for (const tok of map.values()) {
+    tok.name = cssName(tok.path, opts.prefix);
+    if (names.has(tok.name) && names.get(tok.name) !== tok.key) dupes.push(tok);
+    else names.set(tok.name, tok.key);
+  }
+  return { map, dupes, nameOf: (t) => t.name };
+}
+
+/* ---------- engine ---------- */
+const TYPO_PROPS = {
+  fontFamily: ['font-family', 'fontFamilies'], fontWeight: ['font-weight', 'fontWeights'],
+  fontSize: ['font-size', 'fontSizes'], lineHeight: ['line-height', 'lineHeights'],
+  letterSpacing: ['letter-spacing', 'letterSpacing'], paragraphSpacing: ['paragraph-spacing', 'paragraphSpacing'],
+  paragraphIndent: ['paragraph-indent', 'paragraphIndent'], textCase: ['text-transform', 'textCase'],
+  textDecoration: ['text-decoration', 'textDecoration'],
+};
+
+function guessPropType(k) {
+  if (TYPO_PROPS[k]) return TYPO_PROPS[k][1];
+  if (/color|fill|stroke/i.test(k)) return 'color';
+  if (/opacity/i.test(k)) return 'opacity';
+  if (/padding|spacing|margin|gap|radius|width|height|size|offset/i.test(k)) return 'spacing';
+  return 'other';
+}
+
+function createEngine(ctx, opts) {
+  const memo = { var: new Map(), resolved: new Map() };
+  const isComp = (t) => COMPOSITE.has(lc(t.type)) || isObj(t.value) || Array.isArray(t.value);
+
+  function leaf(str, type, mode, stack, rep) {
+    if (typeof str !== 'string') return fmt(str, type, rep.warn);
+    const refs = findRefs(str);
+    if (!refs.length) return fmt(str, type, rep.warn);
+    if (refs.length === 1 && refs[0].match === str.trim()) {
+      const t = ctx.map.get(refs[0].key);
+      if (!t) { rep.err(`ไม่พบ token ที่อ้างอิง {${refs[0].key}}`); return null; }
+      if (isComp(t)) { rep.err(`{${t.key}} เป็น token แบบรวมหลายค่า อ้างอิงเป็นค่าเดียวไม่ได้`); return null; }
+      if (mode === 'var') return `var(${t.name})`;
+      const e = vars(t, 'resolved', stack);
+      if (!e.ok) { rep.err(`อ้างอิง {${t.key}} ที่มีปัญหา`); return null; }
+      return e.vars[0].value;
+    }
+    const stripped = str.replace(new RegExp(REF_G.source, 'g'), '0');
+    const isMath = /^[\d\s.+\-*/()a-z%]+$/i.test(stripped) && (/[+*/]/.test(stripped) || /\s-\s/.test(stripped));
+    if (isMath) return math(str, type, mode, stack, rep);
+    let ok = true;
+    const out = str.replace(new RegExp(REF_G.source, 'g'), (m) => {
+      const r = leaf(m, type, mode, stack, rep);
+      if (r === null) ok = false;
+      return r;
+    });
+    return ok ? out : null;
+  }
+
+  function math(str, type, mode, stack, rep) {
+    let ok = true;
+    const sub = str.replace(new RegExp(REF_G.source, 'g'), (m, k) => {
+      const r = leaf(m, type, mode === 'var' ? 'var' : 'resolved', stack, rep);
+      if (r === null) ok = false;
+      return r === null ? '0' : r;
+    });
+    if (!ok) return null;
+    if (mode === 'var') return `calc(${PX_TYPES.has(lc(type)) ? addPxToBare(sub) : sub})`;
+    const v = evalMath(sub);
+    if (!v || !isFinite(v.n)) return `calc(${sub})`;
+    const n = rnd(v.n);
+    return v.u ? n + v.u : fmt(n, type, rep.warn);
+  }
+
+  function modify(tok, css, mode, stack, rep) {
+    const m = tok.modify;
+    if (!m || css == null) return css;
+    const kind = lc(m.type);
+    let amt = typeof m.value === 'number' ? m.value : parseFloat(m.value);
+    if (typeof m.value === 'string' && findRefs(m.value).length) {
+      const r = leaf(m.value, 'number', 'resolved', stack, rep);
+      amt = parseFloat(r);
+    }
+    if (!isFinite(amt)) { rep.warn('ค่า modifier อ่านไม่ได้ จึงไม่ได้ปรับสี'); return css; }
+    const c = parseColor(css);
+    const pct = rnd(amt * 100, 2);
+    if (kind === 'alpha') {
+      return c ? colorToCss(Object.assign({}, c, { a: amt })) : `color-mix(in srgb, ${css} ${pct}%, transparent)`;
+    }
+    if (kind === 'lighten' || kind === 'darken') {
+      rep.info(`${kind} คำนวณแบบประมาณใน sRGB (Tokens Studio ใช้ LCH จึงอาจต่างเล็กน้อย)`);
+      const target = kind === 'lighten' ? { r: 255, g: 255, b: 255, a: 1 } : { r: 0, g: 0, b: 0, a: 1 };
+      return c ? colorToCss(mixColors(c, target, amt)) : `color-mix(in srgb, ${css}, ${kind === 'lighten' ? 'white' : 'black'} ${pct}%)`;
+    }
+    if (kind === 'mix') {
+      const other = leaf(String(m.color || ''), 'color', mode, stack, rep);
+      if (other == null) return css;
+      const o = parseColor(other);
+      return c && o ? colorToCss(mixColors(c, o, amt)) : `color-mix(in srgb, ${other} ${pct}%, ${css})`;
+    }
+    rep.warn(`modifier "${m.type}" ยังไม่รองรับ จึงใช้สีตั้งต้น`);
+    return css;
+  }
+
+  function composite(tok, mode, stack, rep) {
+    let value = tok.value, guard = 0;
+    if (mode === 'var' && typeof value === 'string' && ['boxshadow', 'shadow', 'border'].includes(lc(tok.type))) {
+      const rs = findRefs(value);
+      const tt = rs.length === 1 && rs[0].match === value.trim() ? ctx.map.get(rs[0].key) : null;
+      if (tt && lc(tt.type) === lc(tok.type)) return [{ name: tok.name, value: `var(${tt.name})` }];
+    }
+    while (typeof value === 'string' && findRefs(value).length === 1 && guard++ < 20) {
+      const t = ctx.map.get(findRefs(value)[0].key);
+      if (!t) { rep.err(`ไม่พบ token ที่อ้างอิง ${value}`); return []; }
+      value = t.value;
+    }
+    const t = lc(tok.type), base = tok.name, out = [];
+    const add = (suffix, v) => { if (v != null) out.push({ name: suffix ? `${base}-${suffix}` : base, value: v }); };
+    const pick = (o, ...ks) => { for (const k of ks) if (o[k] !== undefined) return o[k]; };
+    if (t === 'boxshadow' || t === 'shadow') {
+      const layers = Array.isArray(value) ? value : [value];
+      const parts = layers.map((l) => {
+        if (!isObj(l)) { const r = leaf(l, 'other', mode, stack, rep); return r; }
+        const f = (v, ty) => leaf(v == null ? '0' : v, ty, mode, stack, rep);
+        const items = [f(pick(l, 'x', 'offsetX'), 'spacing'), f(pick(l, 'y', 'offsetY'), 'spacing'),
+          f(l.blur, 'spacing'), f(l.spread, 'spacing'), f(l.color, 'color')];
+        if (items.includes(null)) return null;
+        return (lc(l.type) === 'innershadow' || l.inset ? 'inset ' : '') + items.join(' ');
+      });
+      if (!parts.includes(null)) add('', parts.join(', '));
+      return out;
+    }
+    if (t === 'border' && isObj(value)) {
+      const w = leaf(value.width, 'borderWidth', mode, stack, rep), c = leaf(value.color, 'color', mode, stack, rep);
+      const s = leaf(value.style || 'solid', 'other', mode, stack, rep);
+      if (w != null && c != null && s != null) add('', `${w} ${s} ${c}`);
+      return out;
+    }
+    if (!isObj(value)) { rep.err('รูปแบบค่าของ token แบบรวมไม่ถูกต้อง'); return []; }
+    const done = {};
+    for (const [k, v] of Object.entries(value)) {
+      const info = t === 'typography' && TYPO_PROPS[k] ? TYPO_PROPS[k] : [slug(k), guessPropType(k)];
+      if (t === 'typography' && !TYPO_PROPS[k]) rep.warn(`property "${k}" ใน typography ไม่รู้จัก จึงแปลงเป็น --…-${slug(k)}`);
+      const r = leaf(v, info[1], mode, stack, rep);
+      if (r != null) { add(info[0], r); done[k] = r; }
+    }
+    if (t === 'typography' && done.fontSize && done.fontFamily && opts.typographyShorthand) {
+      const lh = done.lineHeight ? `/${done.lineHeight}` : '';
+      out.unshift({ name: base, value: `${done.fontWeight ? done.fontWeight + ' ' : ''}${done.fontSize}${lh} ${done.fontFamily}` });
+    }
+    return out;
+  }
+
+  function vars(tok, mode, stack) {
+    const cache = memo[mode];
+    if (cache.has(tok.key)) return cache.get(tok.key);
+    if (stack.includes(tok.key)) return { ok: false, vars: [], msgs: [{ level: 'error', msg: 'อ้างอิงวนเป็นวงกลม: ' + stack.concat(tok.key).join(' → ') }] };
+    stack.push(tok.key);
+    const msgs = [];
+    let failed = false;
+    const rep = {
+      warn: (m) => msgs.push({ level: 'warn', msg: m }),
+      info: (m) => msgs.push({ level: 'info', msg: m }),
+      err: (m) => { failed = true; msgs.push({ level: 'error', msg: m }); },
+    };
+    let list = [];
+    if (tok.value === '' || tok.value == null) rep.err('token ไม่มีค่า (value ว่าง)');
+    else if (isComp(tok) || COMPOSITE.has(lc(tok.type))) list = composite(tok, mode, stack, rep);
+    else {
+      let css = leaf(tok.value, tok.type, mode, stack, rep);
+      if (css != null && tok.modify) css = modify(tok, css, mode, stack, rep);
+      if (css != null) list = [{ name: tok.name, value: css }];
+    }
+    if (!list.length) failed = true;
+    stack.pop();
+    const e = { ok: !failed, vars: list, msgs };
+    cache.set(tok.key, e);
+    return e;
+  }
+
+  return { run: (tok) => {
+    const main = vars(tok, opts.refMode, []);
+    const res = opts.refMode === 'var' ? vars(tok, 'resolved', []) : main;
+    return { main, res };
+  } };
+}
+/* ---------- convert ---------- */
+const DEFAULTS = {
+  prefix: '', refMode: 'var', themeMode: 'merged', baseTheme: null, selectedThemes: [],
+  selectorTemplate: '[data-theme="{name}"]', rootSelector: ':root', diffOnly: true,
+  groupComments: true, descriptions: false, typographyShorthand: true, header: true,
+};
+
+function rawPreview(v) {
+  const s = typeof v === 'string' ? v : JSON.stringify(v);
+  return s.length > 140 ? s.slice(0, 137) + '…' : s;
+}
+
+function buildContext(model, theme, selector, opts) {
+  const ctx = makeCtx(model, theme, opts);
+  const engine = createEngine(ctx, opts);
+  const rows = [];
+  const skippedNames = new Set(ctx.dupes.map((t) => t.key));
+  for (const tok of ctx.map.values()) {
+    if (tok.source) continue;
+    const row = {
+      key: tok.key, path: tok.path, name: tok.name, type: tok.type, set: tok.set,
+      raw: rawPreview(tok.value), description: tok.description, layer: tok.layer || 'semantic', vars: [], msgs: [], status: 'ok',
+    };
+    if (skippedNames.has(tok.key)) {
+      row.status = 'error';
+      row.msgs.push({ level: 'error', msg: `ชื่อ ${tok.name} ซ้ำกับ token อื่น จึงไม่ถูกส่งออก` });
+      rows.push(row);
+      continue;
+    }
+    const { main, res } = engine.run(tok);
+    const seen = new Set();
+    main.msgs.concat(res.msgs).forEach((m) => {
+      const k = m.level + m.msg;
+      if (!seen.has(k)) { seen.add(k); row.msgs.push(m); }
+    });
+    const lr = rankOf(tok.layer);
+    const refKeys = [];
+    walkStrings(tok.value, (s) => findRefs(s).forEach((r) => refKeys.push(r.key)));
+    if (tok.modify) walkStrings(tok.modify, (s) => findRefs(s).forEach((r) => refKeys.push(r.key)));
+    new Set(refKeys).forEach((k) => {
+      const t = ctx.map.get(k);
+      if (t && rankOf(t.layer) > lr) {
+        row.msgs.push({ level: 'warn', msg: `ชั้น ${tok.layer} อ้างอิง {${k}} ซึ่งอยู่ชั้น ${t.layer} (ปกติควรอ้างอิงจากชั้นที่ต่ำกว่าเท่านั้น)` });
+      }
+    });
+    if (main.ok && res.ok) {
+      row.vars = main.vars.map((v, i) => ({ name: v.name, value: v.value, resolved: (res.vars[i] || v).value }));
+    }
+    row.status = !main.ok || !res.ok ? 'error' : row.msgs.some((m) => m.level === 'warn') ? 'warn' : 'ok';
+    rows.push(row);
+  }
+  return { id: theme ? theme.id || theme.name : 'merged', name: theme ? theme.name : 'รวมทุกชุด', selector, rows };
+}
+
+function renderBlock(selector, rows, opts, baseDecls) {
+  const lines = [];
+  let lastGroup = null, lastLayer = null, count = 0;
+  const multiLayer = new Set(rows.map((r) => r.layer)).size > 1;
+  const LABEL = { primitive: 'Primitive', semantic: 'Semantic', component: 'Component' };
+  for (const row of rows) {
+    if (row.status === 'error' || !row.vars.length) continue;
+    const decls = row.vars.filter((v) => !baseDecls || baseDecls.get(v.name) !== v.value);
+    if (!decls.length) continue;
+    row.changed = true;
+    if (multiLayer && row.layer !== lastLayer) {
+      if (lines.length) lines.push('');
+      lines.push(`  /* ===== ${LABEL[row.layer] || row.layer} ===== */`);
+      lastLayer = row.layer;
+      lastGroup = null;
+    }
+    const group = row.path.length > 1 ? row.path[0] : '';
+    if (opts.groupComments && group !== lastGroup) {
+      if (lines.length) lines.push('');
+      if (group) lines.push(`  /* ${group} */`);
+      lastGroup = group;
+    }
+    decls.forEach((v, i) => {
+      const note = opts.descriptions && row.description && i === 0 ? ` /* ${String(row.description).replace(/\*\//g, '')} */` : '';
+      lines.push(`  ${v.name}: ${v.value};${note}`);
+      count++;
+    });
+  }
+  return { text: count ? `${selector} {\n${lines.join('\n')}\n}` : '', count };
+}
+
+function convert(model, options) {
+  const opts = Object.assign({}, DEFAULTS, options || {});
+  const contexts = [];
+  const useThemes = opts.themeMode === 'themes' && model.themes.length && opts.selectedThemes.length;
+  if (useThemes) {
+    const chosen = opts.selectedThemes.map((id) => model.themes.find((t) => (t.id || t.name) === id)).filter(Boolean);
+    const baseId = opts.baseTheme && chosen.some((t) => (t.id || t.name) === opts.baseTheme) ? opts.baseTheme : (chosen[0].id || chosen[0].name);
+    chosen.forEach((t) => {
+      const isBase = (t.id || t.name) === baseId;
+      const sel = isBase ? opts.rootSelector : opts.selectorTemplate.replace('{name}', slug(t.name));
+      const c = buildContext(model, t, sel, opts);
+      c.isBase = isBase;
+      contexts.push(c);
+    });
+    contexts.sort((a, b) => (b.isBase ? 1 : 0) - (a.isBase ? 1 : 0));
+  } else {
+    const c = buildContext(model, null, opts.rootSelector, opts);
+    c.isBase = true;
+    contexts.push(c);
+  }
+  const blocks = [];
+  let total = 0, baseDecls = null;
+  for (const c of contexts) {
+    const diff = !c.isBase && opts.diffOnly ? baseDecls : null;
+    const b = renderBlock(c.selector, c.rows, opts, diff);
+    if (b.text) blocks.push(b.text);
+    c.varCount = b.count;
+    total += b.count;
+    if (c.isBase) {
+      baseDecls = new Map();
+      c.rows.forEach((r) => r.status !== 'error' && r.vars.forEach((v) => baseDecls.set(v.name, v.value)));
+    }
+  }
+  const issues = model.issues.slice();
+  const first = contexts[0];
+  contexts.forEach((c) => c.rows.forEach((r) => r.msgs.forEach((m) => {
+    if (c === first || c.rows.length === 0 || m.level === 'error') {
+      if (!issues.some((i) => i.token === r.key && i.msg === m.msg)) issues.push({ level: m.level, token: r.key, msg: m.msg, context: c.name });
+    }
+  })));
+  const stats = {
+    tokens: first.rows.length, vars: total,
+    errors: issues.filter((i) => i.level === 'error').length,
+    warns: issues.filter((i) => i.level === 'warn').length,
+    infos: issues.filter((i) => i.level === 'info').length,
+    sets: model.order.length, themes: model.themes.length,
+  };
+  const head = opts.header
+    ? `/**\n * Design tokens: generated from Tokens Studio for Figma\n * Source: ${model.sourceNames.join(', ').replace(/\*\//g, '')}\n * ${total} CSS variables${useThemes ? `, ${contexts.length} themes` : ''}\n */\n\n`
+    : '';
+  return { css: head + blocks.join('\n\n') + (blocks.length ? '\n' : ''), contexts, issues, stats, options: opts };
+}
+
+const api = { parseInput, convert, slug, cssName, DEFAULTS, LAYERS };
+if (typeof module !== 'undefined' && module.exports) module.exports = api;
+else root.TokenConverter = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>
+(function () {
+  const T = window.TokenConverter;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const LAYERS = [
+    ['primitive', 'Primitive', 'ค่าดิบ เช่น พาเลตสี ขนาด font ที่ยังไม่มีความหมายการใช้งาน'],
+    ['semantic', 'Semantic', 'ค่าตามความหมายการใช้งาน เช่น surface, text, brand รวมถึง theme Light/Dark อ้างอิงจาก Primitive'],
+    ['component', 'Component', 'token ของ component เช่น button, card, input อ้างอิงจาก Semantic'],
+  ];
+  const S = { files: [], model: null, result: null, ctx: 0, filter: 'all', q: '', limit: 80, sample: false, cssText: '' };
+
+  /* ---------- loading ---------- */
+  function readFile(it) {
+    return new Promise((res) => {
+      const r = new FileReader();
+      r.onload = () => res({ name: it.name, layer: it.layer, guessed: it.guessed, text: String(r.result) });
+      r.onerror = () => res({ name: it.name, layer: it.layer, guessed: it.guessed, text: '' });
+      r.readAsText(it.file);
+    });
+  }
+  // items: [{file, name}] where name keeps the folder path (e.g. "core/colors.json")
+  async function onFiles(items, layer) {
+    const arr = items.filter((i) => /\.json$/i.test(i.name)).map((i) => Object.assign({}, i, { layer: i.layer || layer }));
+    if (!arr.length) { toast('ไม่พบไฟล์ .json ในที่เลือก'); return; }
+    const added = await Promise.all(arr.map(readFile));
+    const next = S.sample ? [] : S.files.slice();
+    added.forEach((a) => {
+      const k = next.findIndex((f) => f.name === a.name && f.layer === a.layer);
+      if (k >= 0) next[k] = a; else next.push(a);
+    });
+    load(next, false);
+    if (layer) toast(`เพิ่ม ${added.length} ไฟล์ในชั้น ${layer} รวมทั้งหมด ${next.length} ไฟล์`);
+    else {
+      const n = (l) => added.filter((a) => a.layer === l).length;
+      toast(`แยกชั้นให้แล้ว: Primitive ${n('primitive')} · Semantic ${n('semantic')} · Component ${n('component')} ไฟล์`);
+    }
+  }
+  // Pick a layer from folder names (sub folders first, then the picked root folder, then the file name).
+  const LAYER_WORDS = [['primitive', /primitive/i], ['semantic', /semantic/i], ['component', /component/i]];
+  function layerFromName(s) { const m = LAYER_WORDS.find(([, re]) => re.test(s)); return m ? m[0] : null; }
+  function classify(items) {
+    return items.filter((i) => /\.json$/i.test(i.name)).map((i) => {
+      const parts = i.name.split('/'), base = parts.pop();
+      if (/^\$(themes|metadata)\.json$/i.test(base)) return Object.assign({}, i, { layer: 'semantic' });
+      let layer = null;
+      for (const seg of parts) { layer = layerFromName(seg); if (layer) break; }
+      if (!layer && i.root) layer = layerFromName(i.root);
+      if (!layer) layer = layerFromName(base);
+      return Object.assign({}, i, layer ? { layer } : { layer: 'semantic', guessed: true });
+    });
+  }
+  async function collectDrop(dt) {
+    const entries = Array.from(dt.items || []).map((i) => (i.webkitGetAsEntry ? i.webkitGetAsEntry() : null)).filter(Boolean);
+    if (!entries.length) return Array.from(dt.files).map((f) => ({ file: f, name: f.name }));
+    const out = [];
+    async function walk(e, path, root) {
+      if (e.isFile) {
+        const file = await new Promise((r) => e.file(r, () => r(null)));
+        if (file) out.push({ file, name: path + e.name, root });
+      } else if (e.isDirectory) {
+        const rd = e.createReader();
+        let batch;
+        do {
+          batch = await new Promise((r) => rd.readEntries(r, () => r([])));
+          for (const c of batch) await walk(c, path === null ? '' : path + e.name + '/', root);
+        } while (batch.length);
+      }
+    }
+    for (const e of entries) await walk(e, e.isDirectory ? null : '', e.isDirectory ? e.name : '');
+    return out;
+  }
+  function setView() {
+    const has = !!S.model;
+    $('emptyState').hidden = has; $('results').hidden = !has; $('sampleBanner').hidden = !S.sample;
+  }
+  function load(files, isSample) {
+    if (!files.length) {
+      S.files = []; S.model = null; S.result = null; S.sample = false;
+      setView(); renderFiles(); return;
+    }
+    S.files = files; S.sample = isSample; S.model = T.parseInput(files);
+    files.filter((f) => f.guessed).forEach((f) => S.model.issues.push({ level: 'warn', token: null,
+      msg: `ไฟล์ "${f.name}" ไม่มีชื่อ Primitive / Semantic / Component ในพาธ จึงใส่ไว้ช่อง Semantic ก่อน (ย้ายได้โดยกด × แล้วอัปโหลดใหม่ในช่องที่ถูกต้อง)` }));
+    S.ctx = 0; S.filter = 'all'; S.q = ''; S.limit = 80; $('search').value = '';
+    setView();
+    run();
+  }
+  function loadSample() {
+    const bundle = JSON.parse($('sampleData').textContent);
+    load(bundle.map((b) => ({ name: b.name, layer: b.layer, text: JSON.stringify(b.json) })), true);
+  }
+
+  /* ---------- options ---------- */
+  function readOpts() {
+    // Fixed defaults: var() references, every theme from $themes.json exported, comment grouping is the only user setting.
+    const ids = (S.model.themes || []).map((t) => t.id || t.name);
+    return {
+      refMode: 'var', prefix: '', themeMode: 'themes', selectedThemes: ids, baseTheme: ids[0] || null, diffOnly: true,
+      selectorTemplate: '[data-theme="{name}"]', groupComments: $('groupComments').checked, descriptions: false,
+      typographyShorthand: true, header: true,
+    };
+  }
+
+  /* ---------- run + render ---------- */
+  function run() {
+    if (!S.model) return;
+    S.result = T.convert(S.model, readOpts());
+    if (S.ctx >= S.result.contexts.length) S.ctx = 0;
+    S.cssText = S.result.css;
+    render();
+  }
+  function render() {
+    renderFiles(); renderSummary(); renderIssues(); renderCtxTabs(); renderChips(); renderRows(); renderCss();
+  }
+  function renderFiles() {
+    LAYERS.forEach(([id]) => {
+      const slot = document.querySelector(`.slot[data-layer="${id}"]`);
+      const mine = S.sample ? [] : S.files.map((f, i) => [f, i]).filter(([f]) => f.layer === id);
+      const toks = S.model && !S.sample ? Object.keys(S.model.setLayer || {}).filter((n) => S.model.setLayer[n] === id).reduce((a, n) => a + S.model.sets[n].length, 0) : 0;
+      slot.querySelector('.count').textContent = mine.length ? `${mine.length} ไฟล์ · ${toks} token` : 'ยังไม่มีไฟล์';
+      slot.querySelector('.files').innerHTML = mine.length ? mine.map(([f, i]) =>
+        `<span class="chip">${esc(f.name)}${S.sample ? '' : ` <button class="rm" type="button" data-i="${i}" aria-label="เอา ${esc(f.name)} ออก">×</button>`}</span>`).join('') : '';
+    });
+    document.querySelectorAll('.slot .rm').forEach((b) => b.addEventListener('click', () => {
+      const rest = S.files.filter((_, i) => i !== +b.dataset.i);
+      load(rest, false);
+    }));
+    $('sampleBanner').hidden = !S.sample;
+  }
+  function renderSummary() {
+    const s = S.result.stats;
+    let cls = 'ok', msg = 'ข้อมูลครบ ไม่พบปัญหา พร้อมส่งให้ dev';
+    if (!s.tokens) { cls = 'err'; msg = 'ไม่พบ token ในไฟล์นี้ ตรวจว่าเป็นไฟล์ที่ export จาก Tokens Studio'; }
+    else if (s.errors) { cls = 'err'; msg = `พบข้อผิดพลาด ${s.errors} จุด token ที่มีปัญหาจะไม่ถูกใส่ในไฟล์ CSS`; }
+    else if (s.warns) { cls = 'warn'; msg = `แปลงได้ครบ แต่มีคำเตือน ${s.warns} จุด ควรตรวจก่อนส่งต่อ`; }
+    $('verdict').innerHTML = `<div class="verdict ${cls}">${esc(msg)}</div>`;
+    const tile = (n, l, c) => `<div class="tile ${c || ''}"><b>${n}</b><span>${l}</span></div>`;
+    $('tiles').innerHTML = tile(s.sets, 'ชุด token') + tile(s.tokens, 'token') + tile(s.vars, 'ตัวแปร CSS') +
+      tile(s.themes, 'theme') + tile(s.errors, 'ข้อผิดพลาด', s.errors ? 'err' : 'ok') + tile(s.warns, 'คำเตือน', s.warns ? 'warn' : 'ok');
+  }
+  function renderIssues() {
+    const order = { error: 0, warn: 1, info: 2 };
+    const label = { error: 'ผิดพลาด', warn: 'เตือน', info: 'หมายเหตุ' };
+    const list = S.result.issues.slice().sort((a, b) => order[a.level] - order[b.level]);
+    $('issues').hidden = !list.length;
+    $('issues').innerHTML = list.map((i) =>
+      `<div class="issue"><span class="pill ${i.level}">${label[i.level]}</span><span>${i.token ? `<code>${esc(i.token)}</code> ` : ''}${esc(i.msg)}${i.context && S.result.contexts.length > 1 ? ` <span class="hint">(${esc(i.context)})</span>` : ''}</span></div>`).join('');
+  }
+  function renderCtxTabs() {
+    const cs = S.result.contexts;
+    $('ctxTabs').hidden = cs.length < 2;
+    $('ctxTabs').innerHTML = cs.length < 2 ? '' : '<span class="hint">ดูค่าของ theme:</span>' + cs.map((c, i) =>
+      `<button class="fchip" type="button" data-ctx="${i}" aria-pressed="${i === S.ctx}">${esc(c.name)}${c.isBase ? ' · หลัก' : ''}</button>`).join('');
+    $('ctxTabs').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { S.ctx = +b.dataset.ctx; S.limit = 80; renderCtxTabs(); renderRows(); }));
+  }
+  function curRows() { return S.result.contexts[S.ctx].rows; }
+  function renderChips() {
+    const rows = curRows();
+    const types = {};
+    rows.forEach((r) => { types[r.type] = (types[r.type] || 0) + 1; });
+    const bad = rows.filter((r) => r.status !== 'ok').length;
+    const lay = LAYERS.map(([id, name]) => [id, name, rows.filter((r) => r.layer === id).length]).filter((x) => x[2]);
+    const chips = [['all', `ทั้งหมด ${rows.length}`], ['issues', `มีปัญหา ${bad}`]]
+      .concat(lay.length > 1 ? lay.map(([id, name, n]) => ['layer:' + id, `${name} ${n}`]) : [])
+      .concat(Object.keys(types).map((t) => ['type:' + t, `${t} ${types[t]}`]));
+    $('chips').innerHTML = chips.map(([k, l]) => `<button class="fchip" type="button" data-f="${esc(k)}" aria-pressed="${S.filter === k}">${esc(l)}</button>`).join('');
+    $('chips').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { S.filter = b.dataset.f; S.limit = 80; renderChips(); renderRows(); }));
+  }
+
+  /* ---------- previews ---------- */
+  const safe = (v) => typeof v === 'string' && !/[;{}<>]|url\(/i.test(v);
+  function preview(r) {
+    const t = r.type.toLowerCase();
+    const v0 = r.vars[0] ? r.vars[0].resolved : '';
+    const byName = (suf) => { const x = r.vars.find((v) => v.name.endsWith(suf)); return x ? x.resolved : ''; };
+    if (r.status === 'error' || !r.vars.length) return '<span class="hint">–</span>';
+    const num = parseFloat(v0);
+    if (t === 'color' && safe(v0)) return `<span class="sw"><i style="background:${esc(v0)}"></i></span>`;
+    if (['spacing', 'sizing', 'dimension', 'width', 'height', 'paragraphspacing', 'paragraphindent', 'borderwidth'].includes(t) && isFinite(num))
+      return `<span class="sp" style="width:${Math.max(2, Math.min(120, num))}px"></span>`;
+    if (t === 'borderradius' && safe(v0)) return `<span class="rd" style="border-radius:${esc(v0)}"></span>`;
+    if (t === 'opacity' && isFinite(num)) return `<span class="sp" style="width:90px;height:14px;opacity:${num}"></span>`;
+    if (t === 'fontsizes' && isFinite(num)) return `<span class="tx" style="font-size:${Math.max(10, Math.min(30, num))}px;font-family:var(--font-ui)">Ag ก</span>`;
+    if (t === 'fontweights' && safe(v0)) return `<span class="tx" style="font-weight:${esc(v0)};font-size:18px">Aa ก</span>`;
+    if (t === 'fontfamilies' && safe(v0)) return `<span class="tx" style="font-family:${esc(v0)},var(--font-ui);font-size:16px">Aa ก</span>`;
+    if (t === 'typography') {
+      const fam = byName('-font-family'), w = byName('-font-weight'), sz = parseFloat(byName('-font-size')), lh = byName('-line-height');
+      const st = [];
+      if (safe(fam)) st.push(`font-family:${esc(fam)},var(--font-ui)`);
+      if (safe(w)) st.push(`font-weight:${esc(w)}`);
+      if (isFinite(sz)) st.push(`font-size:${Math.max(11, Math.min(22, sz))}px`);
+      return `<span class="tx" style="${st.join(';')}">ตัวอย่าง Aa</span>`;
+    }
+    if ((t === 'boxshadow' || t === 'shadow') && safe(v0)) return `<span class="bx" style="box-shadow:${esc(v0)}"></span>`;
+    return '<span class="hint">–</span>';
+  }
+
+  function renderRows() {
+    let rows = curRows();
+    const q = S.q.trim().toLowerCase();
+    if (S.filter === 'issues') rows = rows.filter((r) => r.status !== 'ok');
+    else if (S.filter.startsWith('type:')) rows = rows.filter((r) => r.type === S.filter.slice(5));
+    else if (S.filter.startsWith('layer:')) rows = rows.filter((r) => r.layer === S.filter.slice(6));
+    if (q) rows = rows.filter((r) => (r.key + ' ' + r.name + ' ' + r.raw + ' ' + r.vars.map((v) => v.value).join(' ')).toLowerCase().includes(q));
+    const shown = rows.slice(0, S.limit);
+    const mode = S.result.options.refMode;
+    $('rows').innerHTML = shown.length ? shown.map((r) => {
+      const lines = r.vars.map((v) => `<div>${esc(v.name)}: ${esc(v.value)}</div>`);
+      const nameCell = r.vars.length ? `<span class="name">${esc(r.vars[0].name)}</span>` : `<span class="name">${esc(r.name)}</span>`;
+      let valCell = '–';
+      if (r.vars.length) {
+        const first = r.vars[0];
+        const res = mode === 'var' && first.resolved !== first.value ? `<span class="res">= ${esc(first.resolved)}</span>` : '';
+        valCell = r.vars.length > 1
+          ? `<span class="val">${esc(first.value)}${res}</span><details><summary class="hint">มี ${r.vars.length} ตัวแปร</summary><div class="val">${lines.join('')}</div></details>`
+          : `<span class="val">${esc(first.value)}${res}</span>`;
+      }
+      const label = { ok: 'ปกติ', warn: 'เตือน', error: 'ผิดพลาด' }[r.status];
+      const msgs = r.msgs.map((m) => `<div class="msg ${m.level}">${esc(m.msg)}</div>`).join('');
+      return `<tr class="${r.status === 'error' ? 'row-error' : ''}${r.changed && !S.result.contexts[S.ctx].isBase ? ' row-changed' : ''}">
+        <td><div class="pv">${preview(r)}</div></td><td>${nameCell}<div class="hint">${esc(r.type)}</div></td>
+        <td>${valCell}</td><td><div class="raw">${esc(r.raw)}</div></td><td><span class="chip">${esc(r.set)}</span>${r.set.toLowerCase() === r.layer ? '' : `<div class="lay">${esc(r.layer)}</div>`}</td>
+        <td><span class="pill ${r.status}">${label}</span>${msgs}</td></tr>`;
+    }).join('') : `<tr><td colspan="6" class="empty">ไม่มี token ที่ตรงกับตัวกรอง</td></tr>`;
+    $('more').hidden = rows.length <= S.limit;
+    $('more').textContent = `แสดงเพิ่ม (เหลือ ${Math.max(0, rows.length - S.limit)})`;
+  }
+
+  function renderCss() {
+    const html = esc(S.cssText || '/* ยังไม่มี token ที่แปลงได้ */')
+      .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="c">$1</span>')
+      .replace(/(--[\p{L}\p{N}-]+)(?=:)/gu, '<span class="p">$1</span>');
+    $('css').innerHTML = html;
+  }
+
+  /* ---------- actions ---------- */
+  let toastTimer;
+  function toast(m) {
+    const t = $('toast'); t.textContent = m; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+  async function copyCss() {
+    if (!S.cssText) return;
+    try { await navigator.clipboard.writeText(S.cssText); toast('คัดลอก CSS แล้ว'); }
+    catch (e) {
+      showTab('css');
+      const r = document.createRange(); r.selectNodeContents($('css'));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      toast('เลือกข้อความไว้แล้ว กด Ctrl/⌘+C เพื่อคัดลอก');
+    }
+  }
+  // claude.ai only lets a page save a fixed set of extensions (no .css), so wrap tokens.css in a stored (uncompressed) zip.
+  function makeZip(name, text) {
+    const enc = new TextEncoder(), data = enc.encode(text), nm = enc.encode(name);
+    let crc = -1;
+    for (let i = 0; i < data.length; i++) {
+      crc ^= data[i];
+      for (let k = 0; k < 8; k++) crc = (crc >>> 1) ^ (0xEDB88320 & -(crc & 1));
+    }
+    crc = (crc ^ -1) >>> 0;
+    const d = new Date();
+    const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    const lh = new DataView(new ArrayBuffer(30)), ch = new DataView(new ArrayBuffer(46)), eo = new DataView(new ArrayBuffer(22));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, time, true); lh.setUint16(12, date, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, nm.length, true); lh.setUint16(28, 0, true);
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true); ch.setUint16(12, time, true); ch.setUint16(14, date, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, nm.length, true);
+    ch.setUint32(42, 0, true);
+    const cdOffset = 30 + nm.length + data.length, cdSize = 46 + nm.length;
+    eo.setUint32(0, 0x06054b50, true); eo.setUint16(8, 1, true); eo.setUint16(10, 1, true);
+    eo.setUint32(12, cdSize, true); eo.setUint32(16, cdOffset, true);
+    return new Blob([lh, nm, data, ch, nm, eo], { type: 'application/zip' });
+  }
+  function blobDownload() {
+    const url = URL.createObjectURL(new Blob([S.cssText], { type: 'text/css;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'tokens.css';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  // Resolve the viewer's save capability; if it is missing, check why (permission prompt / denied) and act on it.
+  async function getDownloads() {
+    if (!window.claude || !window.claude.use) return { dl: null, state: 'none' };
+    let dl = await window.claude.use('downloads');
+    if (dl) return { dl, state: 'ok' };
+    let state = 'unavailable';
+    try {
+      const perm = await window.claude.use('permissions');
+      if (perm) {
+        state = await perm.state('downloads');
+        if (state === 'prompt') {
+          state = (await perm.request(['downloads'])).downloads;
+        } else if (state === 'denied') {
+          try { await perm.manage(); state = await perm.state('downloads'); } catch (e) { /* panel did not open */ }
+        }
+        if (state === 'granted') { dl = await window.claude.use('downloads'); if (dl) return { dl, state: 'ok' }; }
+      }
+    } catch (e) { /* permissions unavailable in this view */ }
+    return { dl: null, state };
+  }
+  async function downloadCss() {
+    if (!S.cssText) return;
+    try {
+      const g = await getDownloads();
+      if (g.dl) {
+        await g.dl.save({ filename: 'tokens.zip', data: makeZip('tokens.css', S.cssText) });
+        toast('บันทึก tokens.zip แล้ว แตกไฟล์เพื่อได้ tokens.css');
+      } else if (g.state === 'none') {
+        blobDownload();
+        toast('ดาวน์โหลด tokens.css แล้ว');
+      } else {
+        blobDownload();
+        toast(g.state === 'denied'
+          ? 'สิทธิ์บันทึกไฟล์ถูกปิดไว้ เปิดได้ที่เมนู Permissions ของ artifact หรือใช้ปุ่มคัดลอก CSS'
+          : 'มุมมองนี้ไม่เปิดให้บันทึกไฟล์ ถ้าไม่มีไฟล์ขึ้น ให้ใช้ปุ่มคัดลอก CSS หรือไฟล์ HTML แบบเปิดใช้เอง');
+      }
+    } catch (e) {
+      toast(e && e.code === 'declined' ? 'ยกเลิกการบันทึก' : `บันทึกไฟล์ไม่สำเร็จ (${(e && (e.code || e.message)) || 'ไม่ทราบสาเหตุ'}) ลองใช้ปุ่มคัดลอก CSS แทน`);
+    }
+  }
+  function showTab(which) {
+    const css = which === 'css';
+    $('t-css').setAttribute('aria-selected', css); $('t-check').setAttribute('aria-selected', !css);
+    $('p-css').hidden = !css; $('p-check').style.display = css ? 'none' : 'flex';
+  }
+
+  /* ---------- wiring ---------- */
+  const slotsEl = $('slots');
+  slotsEl.innerHTML = LAYERS.map(([id, name, desc]) => `
+    <div class="slot" data-layer="${id}">
+      <div class="slot-h"><strong>${name}</strong><span class="count"></span></div>
+      <small>${desc}</small>
+      <div class="actions">
+        <button class="btn small" type="button" data-act="file">อัปโหลดไฟล์</button>
+      </div>
+      <div class="files"></div>
+      <input type="file" accept=".json,application/json" multiple hidden data-in="file">
+    </div>`).join('');
+  slotsEl.querySelectorAll('.slot').forEach((slot) => {
+    const layer = slot.dataset.layer;
+    slot.querySelector('[data-act="file"]').addEventListener('click', () => slot.querySelector('[data-in="file"]').click());
+    slot.querySelector('[data-in="file"]').addEventListener('change', (e) => {
+      onFiles(Array.from(e.target.files).map((f) => ({ file: f, name: f.name })), layer); e.target.value = '';
+    });
+    ['dragenter', 'dragover'].forEach((ev) => slot.addEventListener(ev, (e) => { e.preventDefault(); slot.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach((ev) => slot.addEventListener(ev, (e) => { e.preventDefault(); slot.classList.remove('over'); }));
+    slot.addEventListener('drop', async (e) => onFiles(await collectDrop(e.dataTransfer), layer));
+  });
+  $('pickFolder').addEventListener('click', () => $('folderIn').click());
+  $('folderIn').addEventListener('change', (e) => {
+    const list = Array.from(e.target.files);
+    onFiles(classify(list.map((f) => {
+      const parts = (f.webkitRelativePath || f.name).split('/');
+      return { file: f, name: parts.slice(1).join('/') || f.name, root: parts.length > 1 ? parts[0] : '' };
+    })));
+    e.target.value = '';
+  });
+  const fb = $('folderBox');
+  ['dragenter', 'dragover'].forEach((ev) => fb.addEventListener(ev, (e) => { e.preventDefault(); fb.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => fb.addEventListener(ev, (e) => { e.preventDefault(); fb.classList.remove('over'); }));
+  fb.addEventListener('drop', async (e) => onFiles(classify(await collectDrop(e.dataTransfer))));
+  $('trySample').addEventListener('click', loadSample);
+  $('clearSample').addEventListener('click', () => load([], false));
+  $('groupComments').addEventListener('change', run);
+  $('search').addEventListener('input', (e) => { S.q = e.target.value; S.limit = 80; renderRows(); });
+  $('more').addEventListener('click', () => { S.limit += 120; renderRows(); });
+  $('t-check').addEventListener('click', () => showTab('check'));
+  $('t-css').addEventListener('click', () => showTab('css'));
+  $('copy').addEventListener('click', copyCss);
+  $('download').addEventListener('click', downloadCss);
+
+  if (window.claude && window.claude.use) window.claude.use('downloads').then((dl) => { if (dl) $('download').textContent = 'ดาวน์โหลด tokens.zip'; }).catch(() => {});
+  load([], false);
+})();
+</script>
+
+</body></html>
